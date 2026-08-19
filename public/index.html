@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobStream — Live Job Ingest Pipeline</title>
+  <meta name="description" content="A resilient job-listing ingestion pipeline pulling from RemoteOK, Arbeitnow, and HN Who's Hiring in real time." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Animated background ── -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-1" aria-hidden="true"></div>
+  <div class="bg-orb orb-2" aria-hidden="true"></div>
+  <div class="bg-orb orb-3" aria-hidden="true"></div>
+
+  <!-- ── Header ── -->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="13" stroke="url(#lg1)" stroke-width="2"/>
+            <path d="M8 14h12M14 8v12" stroke="url(#lg2)" stroke-width="2.5" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="lg1" x1="0" y1="0" x2="28" y2="28">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="#06b6d4"/>
+              </linearGradient>
+              <linearGradient id="lg2" x1="0" y1="0" x2="28" y2="28">
+                <stop offset="0%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#38bdf8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="logo-text">JobStream</span>
+        <span class="logo-badge">LIVE</span>
+      </div>
+      <nav class="header-nav" role="navigation">
+        <button id="btn-refresh" class="btn-ghost" title="Trigger manual refresh">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.65"/></svg>
+          Refresh
+        </button>
+        <button id="btn-health" class="btn-ghost" title="View pipeline health">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Health
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Hero ── -->
+  <section class="hero" aria-label="Introduction">
+    <h1 class="hero-title">Real-time Job Ingestion<br /><span class="gradient-text">Without Getting Burned</span></h1>
+    <p class="hero-sub">Circuit breakers · Token buckets · Schema drift detection · Stale-while-revalidate cache</p>
+    <div class="source-pills" role="list" aria-label="Data sources">
+      <div class="pill" data-source="remoteok" role="listitem">
+        <span class="pill-dot" style="background:#00c853"></span>RemoteOK
+      </div>
+      <div class="pill" data-source="arbeitnow" role="listitem">
+        <span class="pill-dot" style="background:#2979ff"></span>Arbeitnow
+      </div>
+      <div class="pill" data-source="hn_hiring" role="listitem">
+        <span class="pill-dot" style="background:#ff6d00"></span>HN Who's Hiring
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Health panel (hidden by default) ── -->
+  <aside id="health-panel" class="health-panel hidden" aria-label="Pipeline health" aria-hidden="true">
+    <div class="health-panel-inner">
+      <div class="health-header">
+        <h2>Pipeline Health</h2>
+        <button id="btn-close-health" class="btn-close" aria-label="Close health panel">✕</button>
+      </div>
+      <div id="health-content" class="health-grid">
+        <div class="health-loading">Loading health data…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="main" role="main">
+
+    <!-- ── Toolbar ── -->
+    <div class="toolbar" role="search">
+      <div class="search-wrap">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          id="search-input"
+          type="search"
+          placeholder="Search by title, company, or skill…"
+          class="search-input"
+          aria-label="Search jobs"
+          autocomplete="off"
+        />
+      </div>
+      <div class="filters" role="group" aria-label="Filters">
+        <label class="filter-toggle" id="filter-remote">
+          <input type="checkbox" id="chk-remote" />
+          <span>Remote only</span>
+        </label>
+        <div class="source-filters" role="group" aria-label="Filter by source">
+          <button class="source-btn active" data-src="all" id="filter-all">All</button>
+          <button class="source-btn" data-src="remoteok" id="filter-remoteok" style="--accent:#00c853">RemoteOK</button>
+          <button class="source-btn" data-src="arbeitnow" id="filter-arbeitnow" style="--accent:#2979ff">Arbeitnow</button>
+          <button class="source-btn" data-src="hn_hiring" id="filter-hn" style="--accent:#ff6d00">HN Hiring</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stats bar ── -->
+    <div class="stats-bar" aria-live="polite" aria-atomic="true">
+      <span id="stat-count" class="stat">— jobs</span>
+      <span class="stat-sep">·</span>
+      <span id="stat-sources" class="stat">— sources</span>
+      <span class="stat-sep">·</span>
+      <span id="stat-updated" class="stat">—</span>
+    </div>
+
+    <!-- ── Job grid ── -->
+    <div id="jobs-grid" class="jobs-grid" role="feed" aria-label="Job listings" aria-busy="true">
+      <!-- Skeleton cards -->
+      <div class="skeleton-card" aria-hidden="true"></div>
+      <div class="skeleton-card" aria-hidden="true"></div>
+      <div class="skeleton-card" aria-hidden="true"></div>
+      <div class="skeleton-card" aria-hidden="true"></div>
+      <div class="skeleton-card" aria-hidden="true"></div>
+      <div class="skeleton-card" aria-hidden="true"></div>
+    </div>
+
+    <!-- ── Load more ── -->
+    <div class="pagination" id="pagination">
+      <button id="btn-load-more" class="btn-load-more hidden">Load more</button>
+    </div>
+
+    <!-- ── Error state ── -->
+    <div id="error-state" class="error-state hidden" role="alert">
+      <div class="error-icon">⚠</div>
+      <p id="error-msg">Something went wrong fetching jobs.</p>
+      <button id="btn-retry" class="btn-primary">Retry</button>
+    </div>
+
+    <!-- ── Empty state ── -->
+    <div id="empty-state" class="empty-state hidden" role="status">
+      <div class="empty-icon">🔍</div>
+      <p>No jobs match your filters.</p>
+      <button id="btn-clear-filters" class="btn-ghost">Clear filters</button>
+    </div>
+
+  </main>
+
+  <!-- ── Footer ── -->
+  <footer class="footer" role="contentinfo">
+    <p>
+      Demo pipeline — sources: <a href="https://remoteok.io" target="_blank" rel="noopener">RemoteOK</a>,
+      <a href="https://www.arbeitnow.com" target="_blank" rel="noopener">Arbeitnow</a>,
+      <a href="https://news.ycombinator.com" target="_blank" rel="noopener">HN</a>.
+      All data fetched live via public APIs, respecting each source's ToS.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
