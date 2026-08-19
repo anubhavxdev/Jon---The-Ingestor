@@ -2,6 +2,9 @@
 
 > pulling live job listings without catching a ban. no cap.
 
+[![Status](https://img.shields.io/uptimerobot/status/FU6PyEqAZ8?label=pipeline&style=for-the-badge&color=00c853)](https://stats.uptimerobot.com/FU6PyEqAZ8)
+[![Uptime](https://img.shields.io/uptimerobot/ratio/FU6PyEqAZ8?style=for-the-badge&color=7c3aed)](https://stats.uptimerobot.com/FU6PyEqAZ8)
+
 ---
 
 ## what even is this
@@ -196,6 +199,16 @@ both caught by actually running it, not vibes-checking:
 
 1. **RemoteOK date field** — API returns ISO 8601 string (`"2026-08-18T19:57:52+00:00"`), not a Unix epoch. code was doing `date * 1000`. fixed.
 2. **HN field name** — Algolia's items endpoint uses `text`, the search endpoint uses `comment_text`. 240 listings were dropping to 0 because the filter was checking the wrong field. fixed.
+
+---
+
+---
+
+## pipeline status (live)
+
+🟢 **[stats.uptimerobot.com/FU6PyEqAZ8](https://stats.uptimerobot.com/FU6PyEqAZ8)** — real-time uptime for the ingestion pipeline
+
+monitors `/api/health` every 5 min. if something's cooked, it'll show here before anyone notices.
 
 ---
 
